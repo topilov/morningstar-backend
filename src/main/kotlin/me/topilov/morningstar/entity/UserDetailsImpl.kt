@@ -4,7 +4,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority
 import org.springframework.security.core.userdetails.UserDetails
 
 data class UserDetailsImpl(
-    private val user: User
+    val user: User
 ) : UserDetails {
 
     override fun getAuthorities(): List<SimpleGrantedAuthority> = listOf(SimpleGrantedAuthority(user.role))
@@ -15,7 +15,7 @@ data class UserDetailsImpl(
 
     override fun isAccountNonExpired(): Boolean = true
 
-    override fun isAccountNonLocked(): Boolean = true
+    override fun isAccountNonLocked(): Boolean = !user.isLocked
 
     override fun isCredentialsNonExpired(): Boolean = true
 

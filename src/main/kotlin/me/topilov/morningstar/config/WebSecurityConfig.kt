@@ -1,10 +1,12 @@
 package me.topilov.morningstar.config
 
+import jakarta.servlet.http.HttpServletResponse
 import me.topilov.morningstar.service.UserService
 import me.topilov.morningstar.utils.JwtAuthenticationFilter
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Lazy
+import org.springframework.http.HttpStatus
 import org.springframework.security.authentication.AuthenticationManager
 import org.springframework.security.authentication.AuthenticationProvider
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider
@@ -17,6 +19,7 @@ import org.springframework.security.config.http.SessionCreationPolicy
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.security.web.SecurityFilterChain
+import org.springframework.security.web.authentication.HttpStatusEntryPoint
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter
 import org.springframework.web.cors.CorsConfiguration
 
@@ -34,19 +37,32 @@ class WebSecurityConfig(
             .cors { cors ->
                 val corsConfiguration = CorsConfiguration()
                 corsConfiguration.apply {
-                    allowedOriginPatterns = listOf("*")
+                    allowedOrigins = listOf("http://localhost:3000")
                     allowedMethods = listOf("GET", "POST", "PUT", "DELETE", "OPTIONS")
                     allowedHeaders = listOf("*")
                     allowCredentials = true
                 }
                 cors.configurationSource { corsConfiguration }
             }
+            .logout { request ->
+                request
+                    .logoutUrl("/logout")
+                    .deleteCookies("refresh_token")
+                    .clearAuthentication(true)
+                    .permitAll()
+                    .logoutSuccessHandler { _, response, _ ->
+                        response.status = HttpServletResponse.SC_OK
+                    }
+            }
             .authorizeHttpRequests { request ->
                 request
-                        .requestMatchers("/auth/**", "/role").permitAll()
+                        .requestMatchers("/api/auth/**", "/logout", "/login").permitAll()
                         .requestMatchers("/swagger-ui/**", "/swagger-resources/*", "/v3/api-docs/**").permitAll()
-                        .requestMatchers("/endpoint", "/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/endpoint", "api/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated()
+            }
+            .exceptionHandling { request ->
+                request.authenticationEntryPoint(HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED))
             }
             .sessionManagement { manager -> manager.sessionCreationPolicy(SessionCreationPolicy.STATELESS) }
             .authenticationProvider(authenticationProvider())

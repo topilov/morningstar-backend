@@ -1,8 +1,9 @@
 package me.topilov.morningstar.service
 
-import me.topilov.morningstar.controller.JwtAuthenticationResponse
-import me.topilov.morningstar.controller.LoginRequest
-import me.topilov.morningstar.controller.RegisterRequest
+import me.topilov.morningstar.api.authentication.AuthData
+import me.topilov.morningstar.api.authentication.AuthToken
+import me.topilov.morningstar.api.authentication.LoginRequest
+import me.topilov.morningstar.api.authentication.RegisterRequest
 import me.topilov.morningstar.entity.User
 import me.topilov.morningstar.entity.UserDetailsImpl
 import org.springframework.security.authentication.AuthenticationManager
@@ -12,11 +13,11 @@ import org.springframework.stereotype.Service
 @Service
 class AuthenticationService(
     private val userService: UserService,
-    private val jwtService: JwtService,
+    private val authTokenService: AuthTokenService,
     private val authenticationManager: AuthenticationManager,
 ) {
 
-    fun register(registerRequest: RegisterRequest): JwtAuthenticationResponse? {
+    fun register(registerRequest: RegisterRequest): AuthData? {
         if (userService.existsByUsername(registerRequest.username)) return null
 
         val user = User(
@@ -27,12 +28,12 @@ class AuthenticationService(
 
         val insertedUser = userService.insertUser(user)
         val userDetails = UserDetailsImpl(insertedUser)
-        val jwt = jwtService.generateToken(userDetails)
+        val authToken = authTokenService.generateAuthToken(userDetails)
 
-        return JwtAuthenticationResponse(jwt)
+        return AuthData(user, authToken)
     }
 
-    fun login(loginRequest: LoginRequest): JwtAuthenticationResponse? {
+    fun login(loginRequest: LoginRequest): AuthData? {
         authenticationManager.authenticate(
             UsernamePasswordAuthenticationToken(
                 loginRequest.username,
@@ -40,9 +41,20 @@ class AuthenticationService(
             )
         )
 
-        val user = userService.loadUserByUsername(loginRequest.username)
-        val jwt = jwtService.generateToken(user)
+        val userDetails = userService.loadUserByUsername(loginRequest.username)
+        val authToken = authTokenService.generateAuthToken(userDetails)
 
-        return JwtAuthenticationResponse(jwt)
+        return AuthData(userDetails.user, authToken)
+    }
+
+    fun refreshToken(refreshToken: String): AuthToken? {
+        val username = authTokenService.extractUsername(refreshToken) ?: return null
+        val userDetails = userService.loadUserByUsername(username)
+
+        if (authTokenService.isTokenValid(refreshToken, userDetails)) {
+            return authTokenService.generateAuthToken(userDetails)
+        }
+
+        return null
     }
 }

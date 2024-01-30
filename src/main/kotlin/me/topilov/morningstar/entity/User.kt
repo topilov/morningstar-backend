@@ -24,4 +24,5 @@ data class User(
 
     var role: String,
     val balance: Int = 0,
+    val isLocked: Boolean = false,
 )

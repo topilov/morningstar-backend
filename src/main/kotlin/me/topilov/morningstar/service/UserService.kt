@@ -11,12 +11,15 @@ import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
 
 @Service
-class UserService(private val userRepository: UserRepository) : UserDetailsService  {
+class UserService(
+    private val userRepository: UserRepository,
+    private val authTokenService: AuthTokenService,
+) : UserDetailsService  {
 
     @Autowired
     private lateinit var bCryptPasswordEncoder: PasswordEncoder
 
-    override fun loadUserByUsername(username: String): UserDetails {
+    override fun loadUserByUsername(username: String): UserDetailsImpl {
         val user = userRepository.findByUsername(username) ?: throw UsernameNotFoundException("User not found")
         return UserDetailsImpl(user)
     }
@@ -31,6 +34,10 @@ class UserService(private val userRepository: UserRepository) : UserDetailsServi
 
     fun findUserByUsername(username: String): User? {
         return userRepository.findByUsername(username)
+    }
+
+    fun findUserByAccessToken(accessToken: String): User? {
+        return authTokenService.extractUsername(accessToken)?.let(::findUserByUsername)
     }
 
     fun findUserById(id: String): User? {

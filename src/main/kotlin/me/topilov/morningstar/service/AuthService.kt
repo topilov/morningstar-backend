@@ -11,7 +11,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.stereotype.Service
 
 @Service
-class AuthenticationService(
+class AuthService(
     private val userService: UserService,
     private val authTokenService: AuthTokenService,
     private val authenticationManager: AuthenticationManager,

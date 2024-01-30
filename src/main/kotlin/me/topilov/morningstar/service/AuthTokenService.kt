@@ -8,7 +8,6 @@ import io.jsonwebtoken.io.Decoders
 import io.jsonwebtoken.security.Keys
 import jakarta.servlet.http.Cookie
 import jakarta.servlet.http.HttpServletRequest
-import me.topilov.morningstar.api.authentication.AuthData
 import me.topilov.morningstar.api.authentication.AuthToken
 import me.topilov.morningstar.utils.AUTH_HEADER_NAME
 import me.topilov.morningstar.utils.BEARER_PREFIX
@@ -18,7 +17,7 @@ import org.springframework.stereotype.Service
 import java.security.Key
 import java.util.*
 import kotlin.time.Duration.Companion.days
-import kotlin.time.Duration.Companion.seconds
+import kotlin.time.Duration.Companion.minutes
 
 @Service
 class AuthTokenService {
@@ -26,7 +25,7 @@ class AuthTokenService {
     @Value("\${jwt.secret}")
     private lateinit var secretKey: String
 
-    private val ACCESS_TOKEN_VALIDITY = 15.seconds.inWholeMilliseconds
+    private val ACCESS_TOKEN_VALIDITY = 15.minutes.inWholeMilliseconds
     private val REFRESH_TOKEN_VALIDITY = 30.days.inWholeMicroseconds
 
     fun getAccessToken(request: HttpServletRequest): String? {

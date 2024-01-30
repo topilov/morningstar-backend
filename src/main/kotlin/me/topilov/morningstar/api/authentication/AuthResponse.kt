@@ -4,5 +4,5 @@ import me.topilov.morningstar.entity.User
 
 data class AuthResponse(
     val user: User,
-    val token: String,
+    val accessToken: String,
 )

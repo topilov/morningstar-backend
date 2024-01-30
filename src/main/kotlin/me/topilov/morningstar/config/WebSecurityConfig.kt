@@ -56,10 +56,10 @@ class WebSecurityConfig(
             }
             .authorizeHttpRequests { request ->
                 request
-                        .requestMatchers("/api/auth/**", "/logout", "/login").permitAll()
-                        .requestMatchers("/swagger-ui/**", "/swagger-resources/*", "/v3/api-docs/**").permitAll()
-                        .requestMatchers("/endpoint", "api/admin/**").hasRole("ADMIN")
-                        .anyRequest().authenticated()
+                    .requestMatchers("/api/auth/**", "/logout", "/login").permitAll()
+                    .requestMatchers("/swagger-ui/**", "/swagger-resources/*", "/v3/api-docs/**").permitAll()
+                    .requestMatchers("/endpoint", "api/admin/**").hasRole("ADMIN")
+                    .anyRequest().authenticated()
             }
             .exceptionHandling { request ->
                 request.authenticationEntryPoint(HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED))

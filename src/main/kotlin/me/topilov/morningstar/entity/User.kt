@@ -1,13 +1,11 @@
 package me.topilov.morningstar.entity
 
+import com.fasterxml.jackson.annotation.JsonView
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.Size
+import me.topilov.morningstar.utils.View
 import org.springframework.data.annotation.Id
-import org.springframework.data.mongodb.core.mapping.DBRef
 import org.springframework.data.mongodb.core.mapping.Document
-import org.springframework.security.core.GrantedAuthority
-import org.springframework.security.core.authority.SimpleGrantedAuthority
-import org.springframework.security.core.userdetails.UserDetails
 
 @Document(collection = "users")
 data class User(
@@ -16,13 +14,17 @@ data class User(
 
     @get: NotBlank
     @get: Size(max = 16)
-    var username: String,
+    var username: String = "",
 
     @get: NotBlank
     @get: Size(max = 120)
+    @field:JsonView(View.Admin::class)
     var password: String,
 
-    var role: String,
+    var role: String = "ROLE_USER",
+
+    @field:JsonView(View.Admin::class)
     val balance: Int = 0,
+
     val isLocked: Boolean = false,
 )

@@ -1,29 +1,22 @@
 package me.topilov.morningstar.controller
 
-import jakarta.servlet.http.Cookie
-import jakarta.servlet.http.HttpServletRequest
+import com.fasterxml.jackson.annotation.JsonView
 import jakarta.servlet.http.HttpServletResponse
 import me.topilov.morningstar.api.authentication.AccessTokenResponse
 import me.topilov.morningstar.api.authentication.AuthResponse
 import me.topilov.morningstar.api.authentication.LoginRequest
 import me.topilov.morningstar.api.authentication.RegisterRequest
+import me.topilov.morningstar.service.AuthService
 import me.topilov.morningstar.service.AuthTokenService
-import me.topilov.morningstar.service.AuthenticationService
+import me.topilov.morningstar.utils.View
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
-import org.springframework.security.core.Authentication
-import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler
-import org.springframework.web.bind.annotation.CookieValue
-import org.springframework.web.bind.annotation.GetMapping
-import org.springframework.web.bind.annotation.PostMapping
-import org.springframework.web.bind.annotation.RequestBody
-import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.bind.annotation.*
 
 @RestController
 @RequestMapping("api/auth")
-class AuthenticationController(
-    private val authenticationService: AuthenticationService,
+class AuthController(
+    private val authService: AuthService,
     private val authTokenService: AuthTokenService,
 ) {
 
@@ -32,7 +25,7 @@ class AuthenticationController(
         @RequestBody registerRequest: RegisterRequest,
         response: HttpServletResponse
     ): ResponseEntity<AuthResponse> {
-        val authData = authenticationService.register(registerRequest) ?: return ResponseEntity.badRequest().build()
+        val authData = authService.register(registerRequest) ?: return ResponseEntity.badRequest().build()
         val cookie = authTokenService.getRefreshTokenCookie(authData.token.refresh)
 
         response.addCookie(cookie)
@@ -43,11 +36,12 @@ class AuthenticationController(
     }
 
     @PostMapping("/login")
+    @JsonView(View.GuestUser::class)
     fun login(
         @RequestBody loginRequest: LoginRequest,
         response: HttpServletResponse
     ): ResponseEntity<AuthResponse> {
-        val authData = authenticationService.login(loginRequest) ?: return ResponseEntity.badRequest().build()
+        val authData = authService.login(loginRequest) ?: return ResponseEntity.badRequest().build()
         val cookie = authTokenService.getRefreshTokenCookie(authData.token.refresh)
 
         response.addCookie(cookie)
@@ -59,7 +53,7 @@ class AuthenticationController(
 
     @PostMapping("/refresh")
     fun refreshToken(@CookieValue("refresh_token", required = false) refreshToken: String?, response: HttpServletResponse): ResponseEntity<AccessTokenResponse> {
-        val authToken = refreshToken?.let(authenticationService::refreshToken)
+        val authToken = refreshToken?.let(authService::refreshToken)
             ?: return ResponseEntity
                 .status(HttpStatus.UNAUTHORIZED)
                 .build()

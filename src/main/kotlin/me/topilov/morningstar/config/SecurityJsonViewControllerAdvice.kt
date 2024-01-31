@@ -20,17 +20,16 @@ class SecurityJsonViewControllerAdvice : AbstractMappingJacksonResponseBodyAdvic
         request: ServerHttpRequest,
         response: ServerHttpResponse
     ) {
-        bodyContainer.serializationView = View.GuestUser::class.java
+        bodyContainer.serializationView = View.Anonymous::class.java
 
         val authentication = SecurityContextHolder.getContext().authentication ?: return
         val authorities = authentication.authorities
         val role = authorities.first()
 
         val view = when (role.authority) {
-            "ROLE_ANONYMOUS" -> View.GuestUser::class.java
-            "ROLE_USER" -> View.AuthenticatedUser::class.java
+            "ROLE_USER" -> View.User::class.java
             "ROLE_ADMIN" -> View.Admin::class.java
-            else -> View.GuestUser::class.java
+            else -> View.Anonymous::class.java
         }
 
         bodyContainer.serializationView = view

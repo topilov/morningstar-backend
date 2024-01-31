@@ -19,13 +19,14 @@ class UserController(
     private val authTokenService: AuthTokenService,
 ) {
 
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
     @PostMapping("/admin/users")
     fun createUser(@RequestBody user: User): ResponseEntity<User> {
         return ResponseEntity.ok(userService.insertUser(user))
     }
 
     @GetMapping("/users/me")
-    @JsonView(View.Admin::class)
+    @JsonView(View.AuthenticatedUser::class)
     fun getMyUser(request: HttpServletRequest): ResponseEntity<User> {
         val accessToken = authTokenService.getAccessToken(request)
 

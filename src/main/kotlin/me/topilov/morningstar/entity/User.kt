@@ -23,7 +23,7 @@ data class User(
 
     var role: String = "ROLE_USER",
 
-    @field:JsonView(View.Admin::class)
+    @field:JsonView(View.AuthenticatedUser::class, View.Admin::class)
     val balance: Int = 0,
 
     val isLocked: Boolean = false,

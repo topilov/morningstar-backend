@@ -21,6 +21,7 @@ class AuthController(
 ) {
 
     @PostMapping("/register")
+    @JsonView(View.AuthenticatedUser::class)
     fun register(
         @RequestBody registerRequest: RegisterRequest,
         response: HttpServletResponse
@@ -36,7 +37,7 @@ class AuthController(
     }
 
     @PostMapping("/login")
-    @JsonView(View.GuestUser::class)
+    @JsonView(View.AuthenticatedUser::class)
     fun login(
         @RequestBody loginRequest: LoginRequest,
         response: HttpServletResponse

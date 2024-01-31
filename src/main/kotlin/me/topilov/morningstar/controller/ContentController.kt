@@ -1,11 +1,9 @@
 package me.topilov.morningstar.controller
 
-import com.fasterxml.jackson.annotation.JsonView
 import jakarta.servlet.http.HttpServletRequest
 import me.topilov.morningstar.entity.Content
 import me.topilov.morningstar.service.AuthTokenService
 import me.topilov.morningstar.service.ContentService
-import me.topilov.morningstar.utils.View
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
@@ -30,7 +28,6 @@ class ContentController(
     }
 
     @GetMapping("/content/{id}")
-    @JsonView(View.AuthenticatedUser::class)
     fun getContent(@PathVariable id: String): ResponseEntity<Content> {
         return contentService.findById(id)?.let {
             ResponseEntity.ok(it)

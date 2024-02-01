@@ -1,61 +1,65 @@
 package me.topilov.morningstar.controller
 
 import jakarta.servlet.http.HttpServletRequest
-import me.topilov.morningstar.entity.Content
-import me.topilov.morningstar.service.AuthTokenService
+import jakarta.validation.Valid
+import me.topilov.morningstar.dto.content.CreateContentDto
+import me.topilov.morningstar.dto.content.UpdateContentDto
+import me.topilov.morningstar.dto.content.response.DeleteContentResponse
+import me.topilov.morningstar.dto.content.response.GetContentResponse
+import me.topilov.morningstar.dto.content.response.GetContentsResponse
+import me.topilov.morningstar.entity.UserDetailsImpl
+import me.topilov.morningstar.exception.content.NotHaveDeleteContentPermissionsException
 import me.topilov.morningstar.service.ContentService
-import org.springframework.http.HttpStatus
-import org.springframework.http.ResponseEntity
+import org.springframework.security.core.Authentication
 import org.springframework.web.bind.annotation.*
 
 @RestController
 @RequestMapping("/api")
 class ContentController(
     private val contentService: ContentService,
-    private val authTokenService: AuthTokenService,
 ) {
 
-    @PostMapping("/content")
-    fun insertContent(content: Content): ResponseEntity<Content> {
-        val insertedContent = contentService.insert(content)
-        return ResponseEntity.ok(insertedContent)
+    @PostMapping("/user/{userId}/content")
+    fun createContent(
+        @PathVariable("userId") userId: Long,
+        @Valid @RequestBody createContentDto: CreateContentDto
+    ): GetContentResponse {
+        return contentService.createContent(userId, createContentDto)
     }
 
-    @PutMapping("/content")
-    fun saveContent(content: Content): ResponseEntity<Content> {
-        val savedContent = contentService.save(content)
-        return ResponseEntity.ok(savedContent)
+    @PutMapping("/content/{contentId}")
+    fun updateContent(
+        @PathVariable("contentId") contentId: Long,
+        @Valid @RequestBody updateContentDto: UpdateContentDto
+    ): GetContentResponse {
+        return contentService.updateContent(contentId, updateContentDto)
     }
 
-    @GetMapping("/content/{id}")
-    fun getContent(@PathVariable id: String): ResponseEntity<Content> {
-        return contentService.findById(id)?.let {
-            ResponseEntity.ok(it)
-        } ?: ResponseEntity.notFound().build()
+    @GetMapping("/content/{contentId}")
+    fun getContent(@PathVariable("contentId") contentId: Long): GetContentResponse {
+        return contentService.findContentById(contentId)
     }
 
     @GetMapping("/content")
-    fun getContent(): ResponseEntity<List<Content>> {
-        val content = contentService.findAll()
-        return ResponseEntity.ok(content)
+    fun getAllContent(): GetContentsResponse {
+        return contentService.findAllContent()
     }
 
-    @DeleteMapping("/content/{id}")
-    fun deleteContent(@PathVariable id: String, request: HttpServletRequest): ResponseEntity<Boolean> {
-        val accessToken = authTokenService.getAccessToken(request)
-            ?: return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build()
+    @DeleteMapping("/content/{contentId}")
+    fun deleteContent(
+        @PathVariable("contentId") contentId: Long,
+        authentication: Authentication,
+        request: HttpServletRequest
+    ): DeleteContentResponse {
+        val userDetails = authentication.principal as UserDetailsImpl
+        val content = contentService.findContentById(contentId)
 
-        val content = contentService.findById(id)
-            ?: return ResponseEntity.notFound().build()
-
-        val username = authTokenService.extractUsername(accessToken)
-
-        if (content.ownerUsername != username) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build()
+        if (content.owner.id != userDetails.user.id) {
+            throw NotHaveDeleteContentPermissionsException(contentId)
         }
 
-        contentService.deleteById(id)
+        contentService.deleteContentById(contentId)
 
-        return ResponseEntity.ok(true)
+        return DeleteContentResponse(success = true)
     }
 }

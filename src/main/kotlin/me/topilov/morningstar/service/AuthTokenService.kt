@@ -8,11 +8,10 @@ import io.jsonwebtoken.io.Decoders
 import io.jsonwebtoken.security.Keys
 import jakarta.servlet.http.Cookie
 import jakarta.servlet.http.HttpServletRequest
-import me.topilov.morningstar.api.authentication.AuthToken
+import me.topilov.morningstar.dto.auth.AuthToken
 import me.topilov.morningstar.utils.AUTH_HEADER_NAME
 import me.topilov.morningstar.utils.BEARER_PREFIX
 import org.springframework.beans.factory.annotation.Value
-import org.springframework.security.core.userdetails.UserDetails
 import org.springframework.stereotype.Service
 import java.security.Key
 import java.util.*
@@ -26,7 +25,7 @@ class AuthTokenService {
     private lateinit var secretKey: String
 
     private val ACCESS_TOKEN_VALIDITY = 15.minutes.inWholeMilliseconds
-    private val REFRESH_TOKEN_VALIDITY = 30.days.inWholeMicroseconds
+    private val REFRESH_TOKEN_VALIDITY = 30.days.inWholeMilliseconds
 
     fun getAccessToken(request: HttpServletRequest): String? {
         return request.getHeader(AUTH_HEADER_NAME).substring(BEARER_PREFIX.length)
@@ -44,28 +43,28 @@ class AuthTokenService {
         return extractClaim(token) { claims -> claims.expiration }
     }
 
-    fun isTokenValid(token: String, userDetails: UserDetails): Boolean {
-        val username = extractUsername(token)
-        return username == userDetails.username && !isTokenExpired(token)
+    fun isTokenValid(token: String, username: String): Boolean {
+        val extractedUsername = extractUsername(token)
+        return extractedUsername == username && !isTokenExpired(token)
     }
 
     fun isTokenExpired(token: String): Boolean {
         return extractExpiration(token)?.before(Date()) ?: true
     }
 
-    fun generateAuthToken(userDetails: UserDetails): AuthToken {
+    fun generateAuthToken(username: String, role: String): AuthToken {
         return AuthToken(
-            access = generateAccessToken(userDetails),
-            refresh = generateRefreshToken(userDetails)
+            access = generateAccessToken(username, role),
+            refresh = generateRefreshToken(username, role)
         )
     }
 
-    fun generateAccessToken(userDetails: UserDetails): String {
-        return generateToken(userDetails, ACCESS_TOKEN_VALIDITY)
+    fun generateAccessToken(username: String, role: String): String {
+        return generateToken(username, role, ACCESS_TOKEN_VALIDITY)
     }
 
-    fun generateRefreshToken(userDetails: UserDetails): String {
-        return generateToken(userDetails, REFRESH_TOKEN_VALIDITY)
+    fun generateRefreshToken(username: String, role: String): String {
+        return generateToken(username, role, REFRESH_TOKEN_VALIDITY)
     }
 
     fun getRefreshTokenCookie(refreshToken: String): Cookie {
@@ -76,20 +75,20 @@ class AuthTokenService {
         }
     }
 
-    private fun generateToken(userDetails: UserDetails, validity: Long): String {
+    private fun generateToken(username: String, role: String, validity: Long): String {
         val claims = hashMapOf<String, Any>(
-            "username" to userDetails.username,
-            "role" to userDetails.authorities.first()
+            "username" to username,
+            "role" to role,
         )
-        return generateToken(claims, userDetails, validity)
+        return generateToken(claims, username, validity)
     }
 
-    private fun generateToken(extraClaims: Map<String, Any?>, userDetails: UserDetails, validity: Long): String {
+    private fun generateToken(extraClaims: Map<String, Any?>, username: String, validity: Long): String {
         val currentTimeMillis = System.currentTimeMillis()
 
         return Jwts.builder()
             .setClaims(extraClaims)
-            .setSubject(userDetails.username)
+            .setSubject(username)
             .setIssuedAt(Date(currentTimeMillis))
             .setExpiration(Date(currentTimeMillis + validity))
             .signWith(getSigningKey(), SignatureAlgorithm.HS256).compact()

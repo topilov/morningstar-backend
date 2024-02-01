@@ -1,14 +1,20 @@
 package me.topilov.morningstar.controller
 
 import com.fasterxml.jackson.annotation.JsonView
-import jakarta.servlet.http.HttpServletRequest
-import me.topilov.morningstar.entity.User
-import me.topilov.morningstar.service.AuthTokenService
+import jakarta.validation.Valid
+import me.topilov.morningstar.dto.user.CreateUserDto
+import me.topilov.morningstar.dto.user.UpdateUserDto
+import me.topilov.morningstar.dto.user.response.DeleteUserResponse
+import me.topilov.morningstar.dto.user.response.GetUserResponse
+import me.topilov.morningstar.dto.user.response.GetUsersResponse
+import me.topilov.morningstar.entity.UserDetailsImpl
+import me.topilov.morningstar.exception.auth.NonAuthenticationException
+import me.topilov.morningstar.mapper.UserMapper
 import me.topilov.morningstar.service.UserService
 import me.topilov.morningstar.utils.View
 import org.springframework.beans.factory.annotation.Qualifier
-import org.springframework.http.ResponseEntity
 import org.springframework.security.access.prepost.PreAuthorize
+import org.springframework.security.core.Authentication
 import org.springframework.web.bind.annotation.*
 
 @CrossOrigin(origins = ["http://localhost:3000"])
@@ -16,49 +22,50 @@ import org.springframework.web.bind.annotation.*
 @RequestMapping("/api")
 class UserController(
     @Qualifier("userService") private val userService: UserService,
-    private val authTokenService: AuthTokenService,
+    private val userMapper: UserMapper,
 ) {
 
     @PreAuthorize("hasRole('ROLE_ADMIN')")
     @PostMapping("/admin/users")
-    fun createUser(@RequestBody user: User): ResponseEntity<User> {
-        return ResponseEntity.ok(userService.insertUser(user))
+    fun createUser(@Valid @RequestBody createUserDto: CreateUserDto): GetUserResponse {
+        return userService.createUser(createUserDto)
     }
 
     @GetMapping("/users/me")
     @JsonView(View.AuthenticatedUser::class)
-    fun getMyUser(request: HttpServletRequest): ResponseEntity<User> {
-        val accessToken = authTokenService.getAccessToken(request)
-
-        return accessToken
-            ?.let(userService::findUserByAccessToken)
-            ?.let { ResponseEntity.ok(it) }
-            ?: ResponseEntity.notFound().build()
+    fun getMyUser(authentication: Authentication?): GetUserResponse {
+        if (authentication == null) {
+            throw NonAuthenticationException()
+        }
+        val userDetails = authentication.principal as UserDetailsImpl
+        return userMapper.toGetUserResponse(userDetails.user)
     }
 
-    @GetMapping("/users/{username}")
-    fun getUser(@PathVariable username: String): ResponseEntity<User> {
-        return userService.findUserByUsername(username)?.let {
-            ResponseEntity.ok(it)
-        } ?: ResponseEntity.notFound().build()
+    @GetMapping("/users/username/{username}")
+    fun getUser(@PathVariable("username") username: String): GetUserResponse {
+        return userService.findUserByUsername(username)
+    }
+
+    @GetMapping("/users/{userId}")
+    fun getUser(@PathVariable("userId") userId: Long): GetUserResponse {
+        return userService.findUserById(userId)
     }
 
     @PreAuthorize("hasRole('ROLE_ADMIN')")
     @GetMapping("/admin/users")
-    fun getUsers(): ResponseEntity<List<User>> {
-        return ResponseEntity.ok(userService.findAll())
+    fun getUsers(): GetUsersResponse {
+        return userService.findAllUsers()
     }
 
     @PreAuthorize("hasRole('ROLE_ADMIN')")
     @PutMapping("/admin/users")
-    fun saveUser(@RequestBody user: User): ResponseEntity<User> {
-        return ResponseEntity.ok(userService.saveUser(user))
+    fun updateUser(@RequestBody updateUserDto: UpdateUserDto): GetUserResponse {
+        return userService.updateUser(updateUserDto)
     }
 
     @PreAuthorize("hasRole('ROLE_ADMIN')")
     @DeleteMapping("/admin/users/{id}")
-    fun deleteUser(@PathVariable id: String): ResponseEntity<Void> {
-        userService.deleteUser(id)
-        return ResponseEntity.ok().build()
+    fun deleteUser(@PathVariable id: Long): DeleteUserResponse {
+        return userService.deleteUser(id)
     }
 }

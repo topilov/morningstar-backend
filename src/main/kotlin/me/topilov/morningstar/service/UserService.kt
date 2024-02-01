@@ -1,26 +1,31 @@
 package me.topilov.morningstar.service
 
-import me.topilov.morningstar.entity.User
+import me.topilov.morningstar.dto.user.CreateUserDto
+import me.topilov.morningstar.dto.user.UpdateUserDto
+import me.topilov.morningstar.dto.user.response.DeleteUserResponse
+import me.topilov.morningstar.dto.user.response.GetUserResponse
+import me.topilov.morningstar.dto.user.response.GetUsersResponse
 import me.topilov.morningstar.entity.UserDetailsImpl
+import me.topilov.morningstar.exception.user.UserNotFoundByIdException
+import me.topilov.morningstar.exception.user.UserNotFoundByUsernameException
+import me.topilov.morningstar.mapper.UserMapper
 import me.topilov.morningstar.repository.UserRepository
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.security.core.userdetails.UserDetails
 import org.springframework.security.core.userdetails.UserDetailsService
-import org.springframework.security.core.userdetails.UsernameNotFoundException
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
 
 @Service
 class UserService(
     private val userRepository: UserRepository,
-    private val authTokenService: AuthTokenService,
-) : UserDetailsService  {
+    private val userMapper: UserMapper,
+) : UserDetailsService {
 
     @Autowired
     private lateinit var bCryptPasswordEncoder: PasswordEncoder
 
     override fun loadUserByUsername(username: String): UserDetailsImpl {
-        val user = userRepository.findByUsername(username) ?: throw UsernameNotFoundException("User not found")
+        val user = userRepository.findByUsername(username) ?: throw UserNotFoundByUsernameException(username)
         return UserDetailsImpl(user)
     }
 
@@ -28,40 +33,45 @@ class UserService(
         return userRepository.existsByUsername(username)
     }
 
-    fun existsById(id: String): Boolean {
+    fun existsById(id: Long): Boolean {
         return userRepository.existsById(id)
     }
 
-    fun findUserByUsername(username: String): User? {
+    fun findUserByUsername(username: String): GetUserResponse {
         return userRepository.findByUsername(username)
+            ?.let(userMapper::toGetUserResponse)
+            ?: throw UserNotFoundByUsernameException(username)
     }
 
-    fun findUserByAccessToken(accessToken: String): User? {
-        return authTokenService.extractUsername(accessToken)?.let(::findUserByUsername)
+    fun findUserById(id: Long): GetUserResponse {
+        return userRepository.findById(id)
+            .map(userMapper::toGetUserResponse)
+            .orElseThrow { UserNotFoundByIdException(id) }
     }
 
-    fun findUserById(id: String): User? {
-        return userRepository.findById(id).orElse(null)
-    }
-
-    fun findAll(): List<User> {
+    fun findAllUsers(): GetUsersResponse {
         return userRepository.findAll()
+            .map(userMapper::toGetUserResponse)
+            .let(::GetUsersResponse)
     }
 
-    fun insertUser(user: User): User {
+    fun createUser(createUserDto: CreateUserDto): GetUserResponse {
+        val user = userMapper.toUser(createUserDto)
         user.password = bCryptPasswordEncoder.encode(user.password)
-        return userRepository.insert(user)
+
+        return userRepository.saveAndFlush(user)
+            .let(userMapper::toGetUserResponse)
     }
 
-    fun saveUser(user: User): User {
+    fun updateUser(updateUserDto: UpdateUserDto): GetUserResponse {
+        val user = userMapper.toUser(updateUserDto)
+
         return userRepository.save(user)
+            .let(userMapper::toGetUserResponse)
     }
 
-    fun deleteUser(id: String) {
+    fun deleteUser(id: Long): DeleteUserResponse {
         userRepository.deleteById(id)
-    }
-
-    fun deleteUserByUsername(username: String) {
-        userRepository.deleteByUsername(username)
+        return DeleteUserResponse(success = true)
     }
 }

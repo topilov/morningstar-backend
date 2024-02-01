@@ -1,17 +1,12 @@
 package me.topilov.morningstar.repository
 
 import me.topilov.morningstar.entity.User
-import org.springframework.data.mongodb.repository.DeleteQuery
-import org.springframework.data.mongodb.repository.MongoRepository
-import org.springframework.data.mongodb.repository.Query
+import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.stereotype.Repository
 
 @Repository
-interface UserRepository : MongoRepository<User, String> {
-    @Query("{ 'username' : ?0 }")
+interface UserRepository : JpaRepository<User, Long> {
     fun findByUsername(username: String): User?
-
-    fun deleteByUsername(username: String)
 
     fun existsByUsername(username: String): Boolean
 }

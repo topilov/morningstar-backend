@@ -2,15 +2,16 @@ package me.topilov.morningstar.controller
 
 import com.fasterxml.jackson.annotation.JsonView
 import jakarta.servlet.http.HttpServletResponse
-import me.topilov.morningstar.api.authentication.AccessTokenResponse
-import me.topilov.morningstar.api.authentication.AuthResponse
-import me.topilov.morningstar.api.authentication.LoginRequest
-import me.topilov.morningstar.api.authentication.RegisterRequest
+import jakarta.validation.Valid
+import me.topilov.morningstar.dto.auth.LoginDto
+import me.topilov.morningstar.dto.auth.RegisterDto
+import me.topilov.morningstar.dto.auth.response.AccessTokenResponse
+import me.topilov.morningstar.dto.auth.response.AuthResponse
+import me.topilov.morningstar.exception.auth.InvalidRefreshTokenException
 import me.topilov.morningstar.service.AuthService
 import me.topilov.morningstar.service.AuthTokenService
 import me.topilov.morningstar.utils.View
-import org.springframework.http.HttpStatus
-import org.springframework.http.ResponseEntity
+import org.springframework.security.core.Authentication
 import org.springframework.web.bind.annotation.*
 
 @RestController
@@ -23,48 +24,47 @@ class AuthController(
     @PostMapping("/register")
     @JsonView(View.AuthenticatedUser::class)
     fun register(
-        @RequestBody registerRequest: RegisterRequest,
+        @Valid @RequestBody registerDto: RegisterDto,
         response: HttpServletResponse
-    ): ResponseEntity<AuthResponse> {
-        val authData = authService.register(registerRequest) ?: return ResponseEntity.badRequest().build()
+    ): AuthResponse {
+        val authData = authService.register(registerDto)
         val cookie = authTokenService.getRefreshTokenCookie(authData.token.refresh)
 
         response.addCookie(cookie)
 
-        val authResponse = AuthResponse(authData.user, authData.token.access)
-
-        return ResponseEntity.ok(authResponse)
+        return AuthResponse(authData.user, authData.token.access)
     }
 
     @PostMapping("/login")
     @JsonView(View.AuthenticatedUser::class)
     fun login(
-        @RequestBody loginRequest: LoginRequest,
+        @Valid @RequestBody loginDto: LoginDto,
         response: HttpServletResponse
-    ): ResponseEntity<AuthResponse> {
-        val authData = authService.login(loginRequest) ?: return ResponseEntity.badRequest().build()
+    ): AuthResponse {
+        val authData = authService.login(loginDto)
         val cookie = authTokenService.getRefreshTokenCookie(authData.token.refresh)
 
         response.addCookie(cookie)
 
-        val authResponse = AuthResponse(authData.user, authData.token.access)
-
-        return ResponseEntity.ok(authResponse)
+        return AuthResponse(authData.user, authData.token.access)
     }
 
     @PostMapping("/refresh")
-    fun refreshToken(@CookieValue("refresh_token", required = false) refreshToken: String?, response: HttpServletResponse): ResponseEntity<AccessTokenResponse> {
-        val authToken = refreshToken?.let(authService::refreshToken)
-            ?: return ResponseEntity
-                .status(HttpStatus.UNAUTHORIZED)
-                .build()
+    fun refreshToken(
+        @CookieValue("refresh_token", required = true) refreshToken: String?,
+        authentication: Authentication,
+        response: HttpServletResponse
+    ): AccessTokenResponse {
+        if (refreshToken == null) {
+            throw InvalidRefreshTokenException()
+        }
+
+        val authToken = authService.refreshToken(refreshToken, authentication.name)
 
         val cookie = authTokenService.getRefreshTokenCookie(authToken.refresh)
 
         response.addCookie(cookie)
 
-        val authResponse = AccessTokenResponse(authToken.access)
-
-        return ResponseEntity.ok(authResponse)
+        return AccessTokenResponse(authToken.access)
     }
 }

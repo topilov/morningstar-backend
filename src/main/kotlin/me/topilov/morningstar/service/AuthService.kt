@@ -1,11 +1,12 @@
 package me.topilov.morningstar.service
 
-import me.topilov.morningstar.api.authentication.AuthData
-import me.topilov.morningstar.api.authentication.AuthToken
-import me.topilov.morningstar.api.authentication.LoginRequest
-import me.topilov.morningstar.api.authentication.RegisterRequest
-import me.topilov.morningstar.entity.User
-import me.topilov.morningstar.entity.UserDetailsImpl
+import me.topilov.morningstar.dto.auth.AuthData
+import me.topilov.morningstar.dto.auth.AuthToken
+import me.topilov.morningstar.dto.auth.LoginDto
+import me.topilov.morningstar.dto.auth.RegisterDto
+import me.topilov.morningstar.exception.auth.InvalidRefreshTokenException
+import me.topilov.morningstar.exception.auth.UsernameAlreadyTakenException
+import me.topilov.morningstar.mapper.UserMapper
 import org.springframework.security.authentication.AuthenticationManager
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.stereotype.Service
@@ -13,27 +14,23 @@ import org.springframework.stereotype.Service
 @Service
 class AuthService(
     private val userService: UserService,
+    private val userMapper: UserMapper,
     private val authTokenService: AuthTokenService,
     private val authenticationManager: AuthenticationManager,
 ) {
 
-    fun register(registerRequest: RegisterRequest): AuthData? {
-        if (userService.existsByUsername(registerRequest.username)) return null
+    fun register(registerDto: RegisterDto): AuthData {
+        if (userService.existsByUsername(registerDto.username))  {
+            throw UsernameAlreadyTakenException()
+        }
 
-        val user = User(
-            username = registerRequest.username,
-            password = registerRequest.password,
-            role = "ROLE_USER"
-        )
+        val createdUser = userMapper.toCreateUserDto(registerDto).let(userService::createUser)
+        val authToken = authTokenService.generateAuthToken(createdUser.username, createdUser.role)
 
-        val insertedUser = userService.insertUser(user)
-        val userDetails = UserDetailsImpl(insertedUser)
-        val authToken = authTokenService.generateAuthToken(userDetails)
-
-        return AuthData(user, authToken)
+        return AuthData(createdUser, authToken)
     }
 
-    fun login(loginRequest: LoginRequest): AuthData? {
+    fun login(loginRequest: LoginDto): AuthData {
         authenticationManager.authenticate(
             UsernamePasswordAuthenticationToken(
                 loginRequest.username,
@@ -41,20 +38,19 @@ class AuthService(
             )
         )
 
-        val userDetails = userService.loadUserByUsername(loginRequest.username)
-        val authToken = authTokenService.generateAuthToken(userDetails)
+        val user = userService.findUserByUsername(loginRequest.username)
+        val authToken = authTokenService.generateAuthToken(user.username, user.role)
 
-        return AuthData(userDetails.user, authToken)
+        return AuthData(user, authToken)
     }
 
-    fun refreshToken(refreshToken: String): AuthToken? {
-        val username = authTokenService.extractUsername(refreshToken) ?: return null
-        val userDetails = userService.loadUserByUsername(username)
+    fun refreshToken(refreshToken: String, username: String): AuthToken {
+        val user = userService.findUserByUsername(username)
 
-        if (authTokenService.isTokenValid(refreshToken, userDetails)) {
-            return authTokenService.generateAuthToken(userDetails)
+        if (!authTokenService.isTokenValid(refreshToken, username)) {
+            throw InvalidRefreshTokenException()
         }
 
-        return null
+        return authTokenService.generateAuthToken(username, user.role)
     }
 }

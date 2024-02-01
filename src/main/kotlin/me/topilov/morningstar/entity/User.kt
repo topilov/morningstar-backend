@@ -1,30 +1,31 @@
 package me.topilov.morningstar.entity
 
-import com.fasterxml.jackson.annotation.JsonView
-import jakarta.validation.constraints.NotBlank
-import jakarta.validation.constraints.Size
-import me.topilov.morningstar.utils.View
-import org.springframework.data.annotation.Id
-import org.springframework.data.mongodb.core.mapping.Document
+import jakarta.persistence.*
+import org.springframework.data.annotation.CreatedDate
+import org.springframework.data.annotation.LastModifiedDate
+import org.springframework.data.jpa.domain.support.AuditingEntityListener
+import java.time.LocalDateTime
 
-@Document(collection = "users")
+@Entity
+@Table(name = "users")
+@EntityListeners(AuditingEntityListener::class)
 data class User(
     @Id
-    var id: String? = null,
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    var id: Long? = null,
 
-    @get: NotBlank
-    @get: Size(max = 16)
     var username: String = "",
-
-    @get: NotBlank
-    @get: Size(max = 120)
-    @field:JsonView(View.Admin::class)
-    var password: String,
-
+    var password: String = "",
     var role: String = "ROLE_USER",
+    var balance: Double = 0.0,
+    var isLocked: Boolean = false,
 
-    @field:JsonView(View.AuthenticatedUser::class, View.Admin::class)
-    val balance: Int = 0,
+    @OneToMany(mappedBy = "owner", fetch = FetchType.EAGER)
+    val contents: MutableList<Content> = mutableListOf(),
 
-    val isLocked: Boolean = false,
+    @CreatedDate
+    var createdAt: LocalDateTime? = null,
+
+    @LastModifiedDate
+    var updatedAt: LocalDateTime? = null,
 )

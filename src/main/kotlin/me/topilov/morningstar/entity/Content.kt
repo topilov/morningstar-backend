@@ -1,23 +1,34 @@
 package me.topilov.morningstar.entity
 
-import com.fasterxml.jackson.annotation.JsonView
-import me.topilov.morningstar.utils.View
-import org.springframework.data.annotation.Id
-import org.springframework.data.mongodb.core.mapping.Document
+import jakarta.persistence.*
+import org.springframework.data.annotation.CreatedDate
+import org.springframework.data.annotation.LastModifiedDate
+import org.springframework.data.jpa.domain.support.AuditingEntityListener
+import java.time.LocalDateTime
 
-@Document(collection = "content")
+@Entity
+@Table(name = "content")
+@EntityListeners(AuditingEntityListener::class)
 data class Content(
     @Id
-    var id: String? = null,
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    var id: Long? = null,
 
-    var ownerUsername: String = "",
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "owner_id")
+    var owner: User? = null,
 
-    var title: String,
+    var title: String = "",
 
     var description: String = "",
 
     var price: Double = 0.0,
 
-    @field:JsonView(View.Admin::class)
     var path: String? = null,
+
+    @CreatedDate
+    var createdAt: LocalDateTime? = null,
+
+    @LastModifiedDate
+    var updatedAt: LocalDateTime? = null,
 )

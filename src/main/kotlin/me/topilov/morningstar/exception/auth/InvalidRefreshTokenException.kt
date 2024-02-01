@@ -1,3 +1,5 @@
 package me.topilov.morningstar.exception.auth
 
-class InvalidRefreshTokenException : RuntimeException("Invalid refresh token")
+import me.topilov.morningstar.exception.ApiException
+
+class InvalidRefreshTokenException : ApiException("Invalid refresh token")

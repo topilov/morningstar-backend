@@ -1,8 +1,7 @@
 package me.topilov.morningstar.exception.user
 
-open class UserNotFoundException(message: String) : RuntimeException(message)
+import me.topilov.morningstar.exception.ApiException
 
-class UserNotFoundByIdException(userId: Long) : UserNotFoundException("User with id $userId not found")
+class UserNotFoundByIdException(userId: Long) : ApiException("User with id $userId not found")
 
-class UserNotFoundByUsernameException(username: String) :
-    UserNotFoundException("User with username $username not found")
+class UserNotFoundByUsernameException(username: String) : ApiException("User with username $username not found")

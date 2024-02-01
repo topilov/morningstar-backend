@@ -1,3 +1,5 @@
 package me.topilov.morningstar.exception.content
 
-class ContentNotFoundException(contentId: Long) : RuntimeException("Content with id $contentId not found")
+import me.topilov.morningstar.exception.ApiException
+
+class ContentNotFoundException(contentId: Long) : ApiException("Content with id $contentId not found")

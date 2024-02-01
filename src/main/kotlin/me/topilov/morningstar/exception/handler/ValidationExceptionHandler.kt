@@ -21,6 +21,6 @@ class ValidationExceptionHandler : ResponseEntityExceptionHandler() {
     ): ResponseEntity<Any>? {
         val errors = ex.bindingResult.fieldErrors.map(FieldError::getDefaultMessage)
         val errorResponse = ErrorResponse(errors)
-        return ResponseEntity.badRequest().body(errorResponse)
+        return ResponseEntity.status(status).body(errorResponse)
     }
 }

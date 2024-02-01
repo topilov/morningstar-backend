@@ -1,3 +1,5 @@
 package me.topilov.morningstar.exception.auth
 
-class UsernameAlreadyTakenException : RuntimeException("Username already taken")
+import me.topilov.morningstar.exception.ApiException
+
+class UsernameAlreadyTakenException : ApiException("Username already taken")

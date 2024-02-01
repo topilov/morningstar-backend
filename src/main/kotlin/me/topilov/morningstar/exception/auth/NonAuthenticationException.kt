@@ -1,3 +1,5 @@
 package me.topilov.morningstar.exception.auth
 
-class NonAuthenticationException : RuntimeException("Non authentication")
+import me.topilov.morningstar.exception.ApiException
+
+class NonAuthenticationException : ApiException("Non authentication")

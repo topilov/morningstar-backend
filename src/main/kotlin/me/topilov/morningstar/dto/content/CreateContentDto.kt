@@ -6,6 +6,7 @@ import jakarta.validation.constraints.Positive
 import jakarta.validation.constraints.Size
 import me.topilov.morningstar.entity.User
 import org.hibernate.validator.constraints.Length
+import org.springframework.web.multipart.MultipartFile
 
 data class CreateContentDto(
     var owner: User? = null,
@@ -21,4 +22,7 @@ data class CreateContentDto(
     @field:NotNull
     @field:Positive
     var price: Double,
+
+    @field:NotNull(message = "File can not be null")
+    var multipartFile: MultipartFile
 )

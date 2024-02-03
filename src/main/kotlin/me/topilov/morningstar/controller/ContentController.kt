@@ -2,14 +2,12 @@ package me.topilov.morningstar.controller
 
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.validation.Valid
-import me.topilov.morningstar.dto.content.CreateContentDto
-import me.topilov.morningstar.dto.content.UpdateContentDto
+import me.topilov.morningstar.dto.content.*
 import me.topilov.morningstar.dto.content.response.DeleteContentResponse
-import me.topilov.morningstar.dto.content.response.GetContentResponse
-import me.topilov.morningstar.dto.content.response.GetContentsResponse
 import me.topilov.morningstar.entity.UserDetailsImpl
 import me.topilov.morningstar.exception.content.NotHaveDeleteContentPermissionsException
 import me.topilov.morningstar.service.ContentService
+import org.springframework.http.MediaType
 import org.springframework.security.core.Authentication
 import org.springframework.web.bind.annotation.*
 
@@ -19,11 +17,11 @@ class ContentController(
     private val contentService: ContentService,
 ) {
 
-    @PostMapping("/user/{userId}/content")
+    @PostMapping("/user/{userId}/contents", consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
     fun createContent(
         @PathVariable("userId") userId: Long,
-        @Valid @RequestBody createContentDto: CreateContentDto
-    ): GetContentResponse {
+        @ModelAttribute createContentDto: CreateContentDto,
+    ): BasicContentDto {
         return contentService.createContent(userId, createContentDto)
     }
 
@@ -31,18 +29,28 @@ class ContentController(
     fun updateContent(
         @PathVariable("contentId") contentId: Long,
         @Valid @RequestBody updateContentDto: UpdateContentDto
-    ): GetContentResponse {
+    ): BasicContentDto {
         return contentService.updateContent(contentId, updateContentDto)
     }
 
     @GetMapping("/content/{contentId}")
-    fun getContent(@PathVariable("contentId") contentId: Long): GetContentResponse {
-        return contentService.findContentById(contentId)
+    fun getContent(@PathVariable("contentId") contentId: Long): BasicContentDto {
+        return contentService.findBasicContentById(contentId)
     }
 
-    @GetMapping("/content")
-    fun getAllContent(): GetContentsResponse {
-        return contentService.findAllContent()
+    @GetMapping("/content/{contentId}/file")
+    fun getFileContent(@PathVariable("contentId") contentId: Long): FileContentDto {
+        return contentService.findFileContentById(contentId)
+    }
+
+    @GetMapping("/content/{contentId}/image-preview")
+    fun getImagePreviewContent(@PathVariable("contentId") contentId: Long): ImagePreviewContentDto {
+        return contentService.findImagePreviewContentById(contentId)
+    }
+
+    @GetMapping("/contents")
+    fun getContents(): List<BasicContentDto> {
+        return contentService.findAllBasicContent()
     }
 
     @DeleteMapping("/content/{contentId}")
@@ -54,7 +62,7 @@ class ContentController(
         val userDetails = authentication.principal as UserDetailsImpl
         val content = contentService.findContentById(contentId)
 
-        if (content.owner.id != userDetails.user.id) {
+        if (content.owner?.id != userDetails.user.id) {
             throw NotHaveDeleteContentPermissionsException(contentId)
         }
 

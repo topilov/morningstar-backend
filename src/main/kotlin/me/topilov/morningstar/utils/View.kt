@@ -7,5 +7,7 @@ class View {
     interface AuthenticatedUser : User
     interface Admin : AuthenticatedUser
 
+    interface External
+    interface Internal
 }
 

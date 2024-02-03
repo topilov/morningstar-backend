@@ -44,12 +44,14 @@ class AuthService(
         return AuthData(user, authToken)
     }
 
-    fun refreshToken(refreshToken: String, username: String): AuthToken {
-        val user = userService.findUserByUsername(username)
+    fun refreshToken(refreshToken: String): AuthToken {
+        val username = authTokenService.extractUsername(refreshToken)
 
-        if (!authTokenService.isTokenValid(refreshToken, username)) {
+        if (username == null || !authTokenService.isTokenValid(refreshToken, username)) {
             throw InvalidRefreshTokenException()
         }
+
+        val user = userService.findUserByUsername(username)
 
         return authTokenService.generateAuthToken(username, user.role)
     }

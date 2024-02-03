@@ -35,6 +35,9 @@ dependencies {
 	implementation("io.jsonwebtoken:jjwt-impl:0.11.5")
 	implementation("io.jsonwebtoken:jjwt-jackson:0.11.5")
 
+	implementation("org.apache.tika:tika-core:2.9.1")
+	implementation("org.bytedeco:javacv-platform:1.5.10")
+
 	implementation("org.mapstruct:mapstruct:1.6.0.Beta1")
 	kapt("org.mapstruct:mapstruct-processor:1.6.0.Beta1")
 }

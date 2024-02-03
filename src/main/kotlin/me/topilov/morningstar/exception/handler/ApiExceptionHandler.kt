@@ -12,7 +12,7 @@ import java.util.*
 class ApiExceptionHandler {
 
     @ExceptionHandler(ApiException::class)
-    fun handleError(ex: Exception, request: WebRequest): ResponseEntity<Any>? {
+    fun handleError(ex: ApiException, request: WebRequest): ResponseEntity<Any>? {
         val errors = Collections.singletonList(ex.message)
         val errorResponse = ErrorResponse(errors)
         return ResponseEntity.badRequest().body(errorResponse)

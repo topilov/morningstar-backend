@@ -1,8 +1,8 @@
 package me.topilov.morningstar.mapper
 
+import me.topilov.morningstar.dto.content.BasicContentDto
 import me.topilov.morningstar.dto.content.CreateContentDto
 import me.topilov.morningstar.dto.content.UpdateContentDto
-import me.topilov.morningstar.dto.content.response.GetContentResponse
 import me.topilov.morningstar.entity.Content
 import org.mapstruct.Mapper
 
@@ -10,5 +10,5 @@ import org.mapstruct.Mapper
 interface ContentMapper {
     fun toContent(createContentDto: CreateContentDto): Content
     fun toContent(updateContentDto: UpdateContentDto): Content
-    fun toGetContentResponse(content: Content): GetContentResponse
+    fun toBasicContentDto(content: Content): BasicContentDto
 }

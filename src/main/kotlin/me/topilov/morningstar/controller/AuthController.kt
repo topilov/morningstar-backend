@@ -11,7 +11,6 @@ import me.topilov.morningstar.exception.auth.InvalidRefreshTokenException
 import me.topilov.morningstar.service.AuthService
 import me.topilov.morningstar.service.AuthTokenService
 import me.topilov.morningstar.utils.View
-import org.springframework.security.core.Authentication
 import org.springframework.web.bind.annotation.*
 
 @RestController
@@ -51,15 +50,14 @@ class AuthController(
 
     @PostMapping("/refresh")
     fun refreshToken(
-        @CookieValue("refresh_token", required = true) refreshToken: String?,
-        authentication: Authentication,
+        @CookieValue("refresh_token", required = false) refreshToken: String?,
         response: HttpServletResponse
     ): AccessTokenResponse {
         if (refreshToken == null) {
             throw InvalidRefreshTokenException()
         }
 
-        val authToken = authService.refreshToken(refreshToken, authentication.name)
+        val authToken = authService.refreshToken(refreshToken)
 
         val cookie = authTokenService.getRefreshTokenCookie(authToken.refresh)
 

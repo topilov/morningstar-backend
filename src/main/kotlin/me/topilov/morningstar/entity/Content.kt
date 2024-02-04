@@ -34,12 +34,14 @@ data class Content(
     var fileType: String? = null,
 
     @Column(name = "file_data")
+    @Lob
     var file: ByteArray? = null,
 
     @Column(name = "image_preview_type")
     var imagePreviewType: String? = null,
 
     @Column(name = "image_preview_data")
+    @Lob
     var imagePreview: ByteArray? = null,
 
     @CreatedDate

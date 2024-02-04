@@ -1,6 +1,7 @@
 package me.topilov.morningstar.controller
 
 import jakarta.servlet.http.HttpServletRequest
+import jakarta.transaction.Transactional
 import jakarta.validation.Valid
 import me.topilov.morningstar.dto.content.*
 import me.topilov.morningstar.dto.content.response.DeleteContentResponse
@@ -39,11 +40,13 @@ class ContentController(
     }
 
     @GetMapping("/content/{contentId}/file")
+    @Transactional
     fun getFileContent(@PathVariable("contentId") contentId: Long): FileContentDto {
         return contentService.findFileContentById(contentId)
     }
 
     @GetMapping("/content/{contentId}/image-preview")
+    @Transactional
     fun getImagePreviewContent(@PathVariable("contentId") contentId: Long): ImagePreviewContentDto {
         return contentService.findImagePreviewContentById(contentId)
     }

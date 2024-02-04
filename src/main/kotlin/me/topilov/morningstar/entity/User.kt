@@ -23,9 +23,6 @@ data class User(
     var balance: Double = 0.0,
     var isLocked: Boolean = false,
 
-    @OneToMany(mappedBy =  "owner", fetch = FetchType.EAGER, orphanRemoval = true)
-    val contents: MutableList<Content> = mutableListOf(),
-
     @CreatedDate
     var createdAt: LocalDateTime? = null,
 
